@@ -1,5 +1,9 @@
 # LaC - LLM as Code
 
+[![Release](https://img.shields.io/github/v/tag/diranix/lac?label=release)](https://github.com/diranix/lac/tags)
+[![PyPI](https://img.shields.io/pypi/v/lac-engine)](https://pypi.org/project/lac-engine/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 LaC is a protocol for building LLM applications the way IaC builds infrastructure: behavior is declared in versioned artifacts, not improvised in prompts. An application is a folder of plain files - a compose declaration, law files with explicit authority levels, and a commands module. The engine is generic and knows nothing about any particular application.
 
 This repository holds the LaC specification ([SPEC.md](SPEC.md)) and the reference engine. The engine is intentionally small: a compose loader with a strict parser, a context assembler that loads law in trust order (L1 then L2 then L3), a REPL, and an agentic loop where free-form language and canonical `!commands` are two roads into the same code.
