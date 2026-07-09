@@ -42,4 +42,4 @@ Providers: Anthropic (raw HTTP, prompt caching, `ANTHROPIC_API_KEY` from env onl
 
 ## License
 
-TBD before first tagged release.
+Apache-2.0. The protocol is free; applications built on it license themselves independently.
