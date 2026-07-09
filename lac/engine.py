@@ -44,26 +44,25 @@ def main():
 
     context_cfg = compose["context"]
 
-    to_load = []
-    for level in ("L1", "L2", "L3"):
-        to_load.extend(context_cfg[level])
-
     missing = []
     loaded = []
-    for path in to_load:
-        try:
-            with open(os.path.join(app_root, path)) as f:
-                text = f.read()
-            loaded.append("# FILE: " + path + "\n" + text)
-        except FileNotFoundError:
-            missing.append(path)
+    for level in ("L1", "L2", "L3"):
+        for path in context_cfg[level]:
+            try:
+                with open(os.path.join(app_root, path)) as f:
+                    text = f.read()
+                loaded.append("# FILE: " + path + "\n" + text)
+            except FileNotFoundError:
+                missing.append((level, path))
 
     context = "\n\n".join(loaded)
 
     if missing:
         print("MISSING:")
-        for path in missing:
-            print(" ", path)
+        for level, path in missing:
+            print(" ", level, path)
+        if any(level != "L3" for level, path in missing):
+            raise SystemExit("law incomplete (L1/L2 missing) - refusing to start")
     else:
         print("OK:", len(loaded), "files,", len(context), "symbols")
 

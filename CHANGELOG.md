@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 - 2026-07-09
+
+Two boot-and-read hardenings, found by review and verified live.
+
+- Boot refuses a broken law: a missing L1/L2 context file stops the engine (`law incomplete - refusing to start`); the MISSING list now names each file's level. Missing L3 stays a warning.
+- Read jail in the commands contract: an app's load command must resolve paths with realpath and refuse anything outside the memory root (`../` escape closed). Applied in the Grimoire app (lives with the app, not in this package); read-side counterpart of the M2 write fsjail.
+
 ## 0.1.0 - 2026-07-09
 
 First packaged release of the reference engine.
