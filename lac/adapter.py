@@ -1,9 +1,27 @@
 import json
 import os
+import urllib.error
 import urllib.request
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
+TIMEOUT = 240
+
+
+def http_post(url, payload, headers):
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers=headers,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+            return json.loads(response.read())
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode(errors="replace")[:300]
+        raise SystemExit("api error: HTTP " + str(e.code) + " - " + detail)
+    except urllib.error.URLError as e:
+        raise SystemExit("api error: " + str(e.reason))
 
 
 def send(context, messages, llm, tools=None):
@@ -22,13 +40,7 @@ def send_ollama(context, messages, llm, tools):
     }
     if tools:
         payload["tools"] = tools
-    request = urllib.request.Request(
-        OLLAMA_URL,
-        data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(request) as response:
-        answer = json.loads(response.read())
+    answer = http_post(OLLAMA_URL, payload, {"Content-Type": "application/json"})
     return answer["message"]
 
 
@@ -50,28 +62,26 @@ def send_anthropic(context, messages, llm, tools):
     }
     if tools:
         payload["tools"] = tools
-    request = urllib.request.Request(
+    answer = http_post(
         ANTHROPIC_URL,
-        data=json.dumps(payload).encode(),
-        headers={
+        payload,
+        {
             "Content-Type": "application/json",
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
         },
     )
-    with urllib.request.urlopen(request) as response:
-        answer = json.loads(response.read())
-        usage = answer["usage"]
-        print(
-            "[usage]",
-            usage["input_tokens"],
-            "in /",
-            usage["output_tokens"],
-            "out /",
-            usage["cache_read_input_tokens"],
-            "cached",
-        )
-        stop = answer.get("stop_reason")
-        if stop not in ("end_turn", "tool_use"):
-            print("[stop]", stop)
+    usage = answer["usage"]
+    print(
+        "[usage]",
+        usage["input_tokens"],
+        "in /",
+        usage["output_tokens"],
+        "out /",
+        usage["cache_read_input_tokens"],
+        "cached",
+    )
+    stop = answer.get("stop_reason")
+    if stop not in ("end_turn", "tool_use"):
+        print("[stop]", stop)
     return {"role": "assistant", "content": answer["content"]}

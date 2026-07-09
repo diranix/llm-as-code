@@ -2,9 +2,9 @@
 
 LaC is a protocol for building LLM applications the way IaC builds infrastructure: behavior is declared in versioned artifacts, not improvised in prompts. An application is a folder of plain files - a compose declaration, law files with explicit authority levels, and a commands module. The engine is generic and knows nothing about any particular application.
 
-This repository holds the reference engine and, eventually, the LaC specification. The engine is intentionally small: a compose loader with a strict parser, a context assembler that loads law in trust order (L1 then L2 then L3), a REPL, and an agentic loop where free-form language and canonical `!commands` are two roads into the same code.
+This repository holds the LaC specification ([SPEC.md](SPEC.md)) and the reference engine. The engine is intentionally small: a compose loader with a strict parser, a context assembler that loads law in trust order (L1 then L2 then L3), a REPL, and an agentic loop where free-form language and canonical `!commands` are two roads into the same code.
 
-**Status: pre-release.** The spec is the canon; this engine tracks it through milestones M0-M3 (loader, retrieval commands, write perimeter, drift metrics). APIs and the compose schema will change.
+**Status: pre-release.** The spec ([SPEC.md](SPEC.md), methodology v0.2) is the canon; this engine tracks it through milestones M0-M3 (loader, retrieval commands, write perimeter, drift metrics). APIs and the compose schema will change.
 
 ## Core ideas
 
@@ -15,10 +15,12 @@ This repository holds the reference engine and, eventually, the LaC specificatio
 ## Quick start
 
 ```
-pipx install lac-engine
+pipx install git+https://github.com/diranix/lac
 cd your-app
 lac
 ```
+
+(PyPI release is planned; until then the package installs straight from this repo.)
 
 An application folder looks like:
 
@@ -35,6 +37,8 @@ your-app/
 The engine finds `.lac/llm_compose.yaml` in the current directory (or in the directory passed as the first argument) and resolves every path in the compose against that root. No absolute paths anywhere.
 
 Providers: Anthropic (raw HTTP, prompt caching, `ANTHROPIC_API_KEY` from env only) and Ollama for local models. The vendor surface lives in one function, `adapter.send()`.
+
+Trust model: the commands module is application code (L2) and the engine executes it deliberately - running an app means trusting its dev layer, the same way installing any package means trusting its authors. The levels protect L1/L2 from the model and from L3 content, not the machine from the app you chose to run.
 
 ## First application
 
