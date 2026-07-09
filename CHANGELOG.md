@@ -11,4 +11,8 @@ First packaged release of the reference engine.
 - Commands module loaded per app by explicit file path (`commands_<app>.py`, TOOLS + COMMANDS registry).
 - Two roads to the same code: canonical `!commands` intercepted before the model (zero tokens); free-form language through tool calling into the same functions.
 - Providers behind `adapter.send()`: Anthropic (raw HTTP, prompt caching on system, usage line, API key from env only) and Ollama.
-- Known debt: the Ollama path returns a string while the agentic loop expects content blocks; drift metrics (M3) not started.
+- Published on PyPI as `lac-engine`.
+- SPEC.md: the LaC methodology (v0.2) - definition, philosophy, compose schema, levels, commands, security model, memory hierarchy.
+- Adapter hardened: request timeout, readable api errors instead of tracebacks, soft recovery (an API failure prints one line and rolls the conversation back; the REPL survives).
+- Ollama path reconciled with the agentic loop: messages and tools translate both ways; the loop no longer sees the provider.
+- Known debt: drift metrics (M3) not started; no tests or CI yet.

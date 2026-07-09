@@ -15,12 +15,10 @@ This repository holds the LaC specification ([SPEC.md](SPEC.md)) and the referen
 ## Quick start
 
 ```
-pipx install git+https://github.com/diranix/lac
+pipx install lac-engine
 cd your-app
 lac
 ```
-
-(PyPI release is planned; until then the package installs straight from this repo.)
 
 An application folder looks like:
 

@@ -5,7 +5,7 @@ import sys
 
 import yaml
 
-from lac.adapter import send
+from lac.adapter import ApiError, send
 
 
 def main():
@@ -85,9 +85,15 @@ def main():
             else:
                 print("unknown command:", user_input)
             continue
+        checkpoint = len(messages)
         messages.append({"role": "user", "content": user_input})
         while True:
-            reply = send(context, messages, llm_cfg, TOOLS)
+            try:
+                reply = send(context, messages, llm_cfg, TOOLS)
+            except ApiError as error:
+                print("[api error]", error)
+                del messages[checkpoint:]
+                break
             messages.append({"role": "assistant", "content": reply["content"]})
             for block in reply["content"]:
                 if block["type"] == "text":

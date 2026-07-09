@@ -7,8 +7,12 @@ name = "lac-engine"
 version = "0.1.0"
 description = "LaC (LLM as Code) - reference engine. Declarative behavior for LLM apps: law in files, perimeter in code."
 license = "Apache-2.0"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["pyyaml"]
+
+[project.urls]
+Homepage = "https://github.com/diranix/lac"
 
 [project.scripts]
 lac = "lac.engine:main"
