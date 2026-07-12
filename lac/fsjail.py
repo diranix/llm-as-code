@@ -17,6 +17,6 @@ def write_text(root, path, text, append=False):
     target = resolve(root, path)
     os.makedirs(os.path.dirname(target), exist_ok=True)
     mode = "a" if append else "w"
-    with open(target, mode) as f:
+    with open(target, mode, encoding="utf-8") as f:
         f.write(text)
     return target

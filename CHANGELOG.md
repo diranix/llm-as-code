@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.2 - 2026-07-13
+
+Full audit of the engine: correctness, portability, and readability - behavior unchanged unless noted.
+
+- Explicit utf-8 on every file the engine reads or writes (compose, context files, fsjail writes); behavior no longer depends on the OS default encoding.
+- Compose loader: clean `compose error` messages for bad yaml, a non-mapping file, and missing required keys (app, paths, llm, context, context levels) instead of raw tracebacks.
+- Unknown llm provider is refused at boot, for the head and the worker both; adapter's send() dispatches through a PROVIDERS table and raises ApiError instead of killing the session mid-turn.
+- `llm.max_tokens` is a compose key (default 2048) instead of a hardcoded constant; applies to the anthropic and mistral providers.
+- http_post survives a non-JSON response body: ApiError instead of an uncaught exception.
+- Ctrl-C during a command no longer kills the REPL; the command returns "interrupted by the user" and the session continues.
+- engine.py split into named phases (load_compose, load_commands, build_context, run_command, repl, main) - same flow, readable units.
+- to_ollama_tools renamed to_openai_tools - mistral sends the same shape.
+
 ## 0.1.1 - 2026-07-09
 
 Two boot-and-read hardenings, found by review and verified live.
