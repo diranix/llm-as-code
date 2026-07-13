@@ -28,7 +28,8 @@ def http_post(url, payload, headers, tries=4):
         except urllib.error.HTTPError as e:
             detail = e.read().decode(errors="replace")[:300]
             if e.code == 429 and attempt < tries - 1:
-                wait = 2 * (attempt + 1)
+                retry_after = e.headers.get("Retry-After") or ""
+                wait = int(retry_after) if retry_after.isdigit() else 2 * (attempt + 1)
                 print("[rate limited - retrying in", wait, "s]")
                 time.sleep(wait)
                 continue
@@ -43,7 +44,7 @@ def http_post(url, payload, headers, tries=4):
             )
 
 
-def to_ollama_messages(messages):
+def to_openai_messages(messages, with_ids):
     out = []
     for message in messages:
         content = message["content"]
@@ -52,25 +53,42 @@ def to_ollama_messages(messages):
             continue
         text = ""
         tool_calls = []
+        tool_results = []
         for block in content:
             if block["type"] == "text":
                 text += block["text"]
             elif block["type"] == "tool_use":
-                tool_calls.append(
-                    {
-                        "function": {
-                            "name": block["name"],
-                            "arguments": block["input"],
+                if with_ids:
+                    tool_calls.append(
+                        {
+                            "id": block["id"],
+                            "type": "function",
+                            "function": {
+                                "name": block["name"],
+                                "arguments": json.dumps(block["input"]),
+                            },
                         }
-                    }
-                )
+                    )
+                else:
+                    tool_calls.append(
+                        {
+                            "function": {
+                                "name": block["name"],
+                                "arguments": block["input"],
+                            }
+                        }
+                    )
             elif block["type"] == "tool_result":
-                out.append({"role": "tool", "content": block["content"]})
+                result = {"role": "tool", "content": block["content"]}
+                if with_ids:
+                    result["tool_call_id"] = block["tool_use_id"]
+                tool_results.append(result)
         if text or tool_calls:
             entry = {"role": message["role"], "content": text}
             if tool_calls:
                 entry["tool_calls"] = tool_calls
             out.append(entry)
+        out.extend(tool_results)
     return out
 
 
@@ -92,7 +110,7 @@ def send_ollama(context, messages, llm, tools):
     payload = {
         "model": llm["model"],
         "messages": [{"role": "system", "content": context}]
-        + to_ollama_messages(messages),
+        + to_openai_messages(messages, with_ids=False),
         "stream": False,
     }
     if tools:
@@ -118,47 +136,6 @@ def send_ollama(context, messages, llm, tools):
     }
 
 
-def to_mistral_messages(messages):
-    out = []
-    for message in messages:
-        content = message["content"]
-        if isinstance(content, str):
-            out.append({"role": message["role"], "content": content})
-            continue
-        text = ""
-        tool_calls = []
-        tool_results = []
-        for block in content:
-            if block["type"] == "text":
-                text += block["text"]
-            elif block["type"] == "tool_use":
-                tool_calls.append(
-                    {
-                        "id": block["id"],
-                        "type": "function",
-                        "function": {
-                            "name": block["name"],
-                            "arguments": json.dumps(block["input"]),
-                        },
-                    }
-                )
-            elif block["type"] == "tool_result":
-                tool_results.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": block["tool_use_id"],
-                        "content": block["content"],
-                    }
-                )
-        if text or tool_calls:
-            entry = {"role": message["role"], "content": text}
-            if tool_calls:
-                entry["tool_calls"] = tool_calls
-            out.append(entry)
-        out.extend(tool_results)
-    return out
-
-
 def send_mistral(context, messages, llm, tools):
     api_key = os.environ.get("MISTRAL_API_KEY")
     if not api_key:
@@ -167,7 +144,7 @@ def send_mistral(context, messages, llm, tools):
         "model": llm["model"],
         "max_tokens": llm.get("max_tokens", DEFAULT_MAX_TOKENS),
         "messages": [{"role": "system", "content": context}]
-        + to_mistral_messages(messages),
+        + to_openai_messages(messages, with_ids=True),
     }
     if "temperature" in llm:
         payload["temperature"] = llm["temperature"]
@@ -213,10 +190,30 @@ def send_mistral(context, messages, llm, tools):
     }
 
 
+def cache_last(messages, cache):
+    last = dict(messages[-1])
+    content = last["content"]
+    if isinstance(content, str):
+        content = [{"type": "text", "text": content}]
+    blocks = [dict(b) for b in content]
+    blocks[-1]["cache_control"] = cache
+    last["content"] = blocks
+    return messages[:-1] + [last]
+
+
 def send_anthropic(context, messages, llm, tools):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise ApiError("ANTHROPIC_API_KEY is not set")
+    cache = {"type": "ephemeral"}
+    headers = {
+        "Content-Type": "application/json",
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+    }
+    if llm.get("cache_ttl") == "1h":
+        cache["ttl"] = "1h"
+        headers["anthropic-beta"] = "extended-cache-ttl-2025-04-11"
     payload = {
         "model": llm["model"],
         "max_tokens": llm.get("max_tokens", DEFAULT_MAX_TOKENS),
@@ -224,24 +221,16 @@ def send_anthropic(context, messages, llm, tools):
             {
                 "type": "text",
                 "text": context,
-                "cache_control": {"type": "ephemeral"},
+                "cache_control": cache,
             }
         ],
-        "messages": messages,
+        "messages": cache_last(messages, cache) if tools else messages,
     }
     if "temperature" in llm:
         payload["temperature"] = llm["temperature"]
     if tools:
         payload["tools"] = tools
-    answer = http_post(
-        ANTHROPIC_URL,
-        payload,
-        {
-            "Content-Type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-        },
-    )
+    answer = http_post(ANTHROPIC_URL, payload, headers)
     usage = answer["usage"]
     if not llm.get("quiet"):
         print(

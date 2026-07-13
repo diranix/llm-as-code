@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.3 - 2026-07-13
+
+Second audit pass: protocol integrity and cost.
+
+- fsjail canary at boot: the engine attempts a jail escape and refuses to start unless it is refused - the lock is verified, not assumed (SPEC 5.2).
+- to_ollama_messages and to_mistral_messages folded into one to_openai_messages(with_ids) converter; ollama tool results now follow their assistant message.
+- Anthropic conversation caching: cache_control rides the last message when tools are on, so the growing conversation is cached, not only the system prompt; `llm.cache_ttl: "1h"` switches to the extended-ttl beta.
+- env["law_size"]: the engine hands apps its boot-context size estimate, so context policies can budget the conversation net of the always-present law.
+- ON_TEXT hook now receives env - `ON_TEXT(env, text)` - so app text gates keep state without module globals.
+- readline import is optional (the engine starts on Windows); 429 retry honors a numeric Retry-After header.
+
 ## 0.1.2 - 2026-07-13
 
 Full audit of the engine: correctness, portability, and readability - behavior unchanged unless noted.

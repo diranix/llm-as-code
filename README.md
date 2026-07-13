@@ -38,7 +38,7 @@ your-app/
 
 The engine finds `.lac/llm_compose.yaml` in the current directory (or in the directory passed as the first argument) and resolves every path in the compose against that root. No absolute paths anywhere.
 
-Providers: Anthropic (raw HTTP, prompt caching, `ANTHROPIC_API_KEY` from env only) and Ollama for local models. The vendor surface lives in one function, `adapter.send()`.
+Providers: Anthropic (raw HTTP, prompt + conversation caching, `ANTHROPIC_API_KEY` from env only), Mistral (`MISTRAL_API_KEY`), and Ollama for local models. The vendor surface lives in one dispatch table, `adapter.PROVIDERS`, behind `adapter.send()`; any OpenAI-shaped API is one new entry.
 
 Trust model: the commands module is application code (L2) and the engine executes it deliberately - running an app means trusting its dev layer, the same way installing any package means trusting its authors. The levels protect L1/L2 from the model and from L3 content, not the machine from the app you chose to run.
 

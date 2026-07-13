@@ -1,12 +1,17 @@
 import importlib.util
 import os
-import readline  # noqa: F401
 import sys
 from datetime import datetime
 
 import yaml
 
 from lac.adapter import PROVIDERS, ApiError, send
+from lac.fsjail import JailError, resolve
+
+try:
+    import readline  # noqa: F401
+except ImportError:
+    pass
 
 
 def need(mapping, key):
@@ -173,7 +178,7 @@ def repl(env, context, llm_cfg, ask, commands_module):
             for block in reply["content"]:
                 if block["type"] == "text":
                     if ON_TEXT:
-                        block["text"] = ON_TEXT(block["text"])
+                        block["text"] = ON_TEXT(env, block["text"])
                     print()
                     print(block["text"])
                     env["log"]("assistant", block["text"])
@@ -219,6 +224,16 @@ def main():
     trash_dir = os.path.join(app_root, need(paths, "trash"))
     env = {"memory": memory_dir, "trash": trash_dir}
 
+    try:
+        resolve(memory_dir, os.path.join("..", "canary"))
+    except JailError:
+        pass
+    else:
+        raise SystemExit(
+            "fsjail canary was not refused - the write cage is open, "
+            "refusing to start"
+        )
+
     llm_cfg = need(compose, "llm")
     worker_cfg = llm_cfg.pop("worker", None)
     env["budget"] = llm_cfg.pop("context_budget", None) or 30000
@@ -242,6 +257,7 @@ def main():
     app_name = need(need(compose, "app"), "name")
     commands_module = load_commands(app_root, app_name)
     context = build_context(app_root, need(compose, "context"))
+    env["law_size"] = len(context) // 3
 
     sessions_dir = os.path.join(memory_dir, ".sessions")
     os.makedirs(sessions_dir, exist_ok=True)
