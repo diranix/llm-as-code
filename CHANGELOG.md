@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 - 2026-07-13
+
+- Distribution renamed: `lac-engine` -> `llm-as-code` (matches the paper's "LLM as Code"). The import package stays `lac`, the command stays `lac`. The GitHub repo moves to diranix/llm-as-code; `lac-engine` on PyPI is retired at 0.1.3.
+
 ## 0.1.3 - 2026-07-13
 
 Second audit pass: protocol integrity and cost.
