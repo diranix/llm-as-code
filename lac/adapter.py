@@ -44,6 +44,12 @@ def http_post(url, payload, headers, tries=4):
             )
 
 
+def law_of(context):
+    if isinstance(context, str):
+        return context
+    return context["law"]
+
+
 def to_openai_messages(messages, with_ids):
     out = []
     for message in messages:
@@ -107,9 +113,10 @@ def to_openai_tools(tools):
 
 
 def send_ollama(context, messages, llm, tools):
+    system = law_of(context)
     payload = {
         "model": llm["model"],
-        "messages": [{"role": "system", "content": context}]
+        "messages": [{"role": "system", "content": system}]
         + to_openai_messages(messages, with_ids=False),
         "stream": False,
     }
@@ -140,10 +147,11 @@ def send_mistral(context, messages, llm, tools):
     api_key = os.environ.get("MISTRAL_API_KEY")
     if not api_key:
         raise ApiError("MISTRAL_API_KEY is not set")
+    system = law_of(context)
     payload = {
         "model": llm["model"],
         "max_tokens": llm.get("max_tokens", DEFAULT_MAX_TOKENS),
-        "messages": [{"role": "system", "content": context}]
+        "messages": [{"role": "system", "content": system}]
         + to_openai_messages(messages, with_ids=True),
     }
     if "temperature" in llm:
@@ -214,16 +222,17 @@ def send_anthropic(context, messages, llm, tools):
     if llm.get("cache_ttl") == "1h":
         cache["ttl"] = "1h"
         headers["anthropic-beta"] = "extended-cache-ttl-2025-04-11"
+    system = [
+        {
+            "type": "text",
+            "text": law_of(context),
+            "cache_control": cache,
+        }
+    ]
     payload = {
         "model": llm["model"],
         "max_tokens": llm.get("max_tokens", DEFAULT_MAX_TOKENS),
-        "system": [
-            {
-                "type": "text",
-                "text": context,
-                "cache_control": cache,
-            }
-        ],
+        "system": system,
         "messages": cache_last(messages, cache) if tools else messages,
     }
     if "temperature" in llm:

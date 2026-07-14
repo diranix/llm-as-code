@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "llm-as-code"
-version = "0.1.4"
+version = "0.1.5"
 description = "LaC (LLM as Code) - reference engine. Declarative behavior for LLM apps: law in files, perimeter in code."
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["pyyaml"]
+dependencies = ["pyyaml", "jsonschema"]
 
 [project.urls]
 Homepage = "https://github.com/diranix/llm-as-code"

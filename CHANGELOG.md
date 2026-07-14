@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 - 2026-07-14
+
+Injection defense: the authority channel. Behavior unchanged for well-behaved input; the change is where data sits.
+
+- L3 out of the system prompt: the system channel now carries L1/L2 law only. Boot data (core, map, tree) and all retrieved content arrive as the first conversation message, marked L3 - so the model receives law as law and data as data. `build_context` returns `(law, data)`; the adapter's `split_context` becomes `law_of`, and all three providers (Anthropic, Mistral, Ollama) build `system` from law alone. This closes the case where injection-shaped L3 text rode the same channel a model is trained to read as authority.
+- Canonical commands feed back as a real tool exchange: instead of pasting the command result into a user message, the REPL synthesizes an `assistant` `tool_use` plus a `user` `tool_result` into the history (uuid tool-call id, 9 chars for Mistral). The model sees the result in the channel it expects, so it no longer re-issues a command code already executed (the double-load bug).
+- Removed the L1 restatement mechanism (`build_context` no longer tracks `l1_parts`); the after-data law repetition is gone. Cancelled canonical commands now roll their user message back out of the history.
+
 ## 0.1.4 - 2026-07-13
 
 - Distribution renamed: `lac-engine` -> `llm-as-code` (matches the paper's "LLM as Code"). The import package stays `lac`, the command stays `lac`. The GitHub repo moves to diranix/llm-as-code; `lac-engine` on PyPI is retired at 0.1.3.

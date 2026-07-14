@@ -1,0 +1,70 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "llm_compose",
+    "description": "LaC application declaration, schema_version 1. An unknown key is a refusal, not a guess.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["schema_version", "app", "llm", "paths", "context"],
+    "properties": {
+        "schema_version": {"const": 1},
+        "app": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+                "name": {"type": "string", "minLength": 1},
+                "version": {"type": ["string", "number"]}
+            }
+        },
+        "llm": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["provider", "model"],
+            "properties": {
+                "provider": {"type": "string", "minLength": 1},
+                "model": {"type": "string", "minLength": 1},
+                "temperature": {"type": "number"},
+                "max_tokens": {"type": "integer", "minimum": 1},
+                "cache_ttl": {"type": "string"},
+                "context_budget": {"type": "integer", "minimum": 1},
+                "worker": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["provider", "model"],
+                    "properties": {
+                        "provider": {"type": "string", "minLength": 1},
+                        "model": {"type": "string", "minLength": 1},
+                        "temperature": {"type": "number"},
+                        "max_tokens": {"type": "integer", "minimum": 1}
+                    }
+                }
+            }
+        },
+        "paths": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["memory", "trash"],
+            "properties": {
+                "memory": {"type": "string", "minLength": 1},
+                "trash": {"type": "string", "minLength": 1}
+            }
+        },
+        "levels": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {"type": "string"}
+            }
+        },
+        "context": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["L1", "L2", "L3"],
+            "properties": {
+                "L1": {"type": "array", "items": {"type": "string"}},
+                "L2": {"type": "array", "items": {"type": "string"}},
+                "L3": {"type": "array", "items": {"type": "string"}}
+            }
+        }
+    }
+}
