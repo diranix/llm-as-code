@@ -108,10 +108,9 @@ def check_lock(app_root, compose):
     print("L0 sealed:", len(locked), "files verified")
 
 
-def load_commands(app_root, app_name):
-    module_name = "commands_" + app_name
-    module_path = os.path.join(app_root, module_name + ".py")
-    spec = importlib.util.spec_from_file_location(module_name, module_path)
+def load_commands(app_root):
+    module_path = os.path.join(app_root, ".lac", "commands.py")
+    spec = importlib.util.spec_from_file_location("commands", module_path)
     if spec is None or spec.loader is None:
         raise SystemExit("compose error: no commands module at " + module_path)
     module = importlib.util.module_from_spec(spec)
@@ -119,13 +118,16 @@ def load_commands(app_root, app_name):
     return module
 
 
-def build_context(app_root, context_cfg):
+def build_context(app_root, context_cfg, persona=None):
     missing = []
     law_parts = []
     data_parts = []
     for level in ("L1", "L2", "L3"):
         bucket = data_parts if level == "L3" else law_parts
-        for path in need(context_cfg, level):
+        paths = list(need(context_cfg, level))
+        if level == "L2" and persona:
+            paths.append(persona)
+        for path in paths:
             try:
                 with open(os.path.join(app_root, path), encoding="utf-8") as f:
                     entry = "# FILE [" + level + "]: " + path + "\n" + f.read()
@@ -381,10 +383,11 @@ def main():
 
     env["worker"] = worker if worker_cfg else None
 
-    app_name = need(need(compose, "app"), "name")
-    commands_module = load_commands(app_root, app_name)
+    commands_module = load_commands(app_root)
     writable.update(getattr(commands_module, "WRITABLE", ()))
-    law, data = build_context(app_root, need(compose, "context"))
+    law, data = build_context(
+        app_root, need(compose, "context"), need(compose, "llm").get("persona")
+    )
     on_boot = getattr(commands_module, "ON_BOOT", None)
     if on_boot:
         data += ("\n\n" if data else "") + on_boot(env)

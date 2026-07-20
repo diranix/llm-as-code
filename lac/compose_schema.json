@@ -23,6 +23,7 @@
             "properties": {
                 "provider": {"type": "string", "minLength": 1},
                 "model": {"type": "string", "minLength": 1},
+                "persona": {"type": "string", "minLength": 1},
                 "temperature": {"type": "number"},
                 "max_tokens": {"type": "integer", "minimum": 1},
                 "cache_ttl": {"type": "string"},

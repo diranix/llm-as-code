@@ -36,12 +36,11 @@ What LaC is NOT:
 One file declares the whole application:
 
 - `schema_version` - parser strictness: an unknown key is a refusal, not a guess;
-- `app` - name (the engine derives the commands module from it) and version;
-- `llm` - the head: {provider, model}; access keys live ONLY in env, never in files;
+- `app` - name and version (identity only; the commands module lives at the fixed path `.lac/commands.py`);
+- `llm` - the head: {provider, model, optional persona}; `llm.persona` names the persona file, loaded as L2 after the L2 list - switching personas is one key change; access keys live ONLY in env, never in files;
 - `paths` - only what the code actually reads (minimalism: a key with no consumer gets removed);
 - `levels` - the declaration of the write perimeter (who writes what; fsjail enforces it);
 - `context` - what loads into context at boot; the keys ARE the levels (L1/L2/L3), paths are relative to the application root.
-
 The compose is LaC's blank form; filling it in belongs to the application. Whoever holds the compose holds everything - which is why the compose itself is L1.
 
 ### 3.2 Levels
@@ -69,7 +68,7 @@ Commands are CODE with two roads to one function:
 - **The canonical road**: input `!cmd` is intercepted by the engine BEFORE the model - zero tokens, zero chance to lie. The engine splits name + arguments and dispatches through a registry (name to function).
 - **The free-language road**: everything else goes to the model together with tool descriptions. The model maps the phrase onto a command, echoes the mapping (the echo is not a confirmation), and REQUESTS execution with a tool call; the engine runs THE SAME function; the model only narrates the result.
 
-The engine is blind to the application: it knows no command names, no folders, no law files. The commands module is loaded by name from `app.name`; a different application means a different module, zero changes in the engine. Proven live: without tools the model confabulated file contents; with tools it narrates the disk honestly - the tool takes away the ability to lie.
+The engine is blind to the application: it knows no command names, no folders, no law files. The commands module is loaded from the fixed path `.lac/commands.py`; a different application means a different module, zero changes in the engine. Proven live: without tools the model confabulated file contents; with tools it narrates the disk honestly - the tool takes away the ability to lie.
 
 Side-effect commands (save, delete) pass a confirmation gate IN CODE; writing is locked to L3; delete is a move to trash, never erasure.
 

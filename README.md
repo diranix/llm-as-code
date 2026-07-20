@@ -48,7 +48,7 @@ your-app/
     llm_compose.yaml    # the anchor: all paths resolve relative to the app root
     law/                # L1/L2 law files
     souls/              # personas (L2)
-  commands_<app>.py     # the app's command module (TOOLS + COMMANDS registry)
+    commands.py         # the app's command module (TOOLS + COMMANDS registry)
   <memory folders>      # L3 content
 ```
 

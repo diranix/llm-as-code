@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 - 2026-07-20
+
+Breaking: both changes below require a one-line compose/file move in existing apps.
+
+- `llm.persona` compose key: the persona file gets its own slot instead of hiding in the `context.L2` list. It loads as L2 right after the L2 files; a missing persona file refuses boot like any missing law. Optional - apps without personas declare nothing.
+- The commands module moved into the machinery folder under a fixed name: the engine now loads `.lac/commands.py` instead of `commands_<app>.py` at the app root. The app root belongs to the user's content; `.lac/` holds everything the app runs on, and the module name is no longer derived from `app.name`. Update the compose `levels.L0` path, rename the module file, and re-run `lac lock`.
+
 ## 0.1.5 - 2026-07-14
 
 Injection defense: the authority channel. Behavior unchanged for well-behaved input; the change is where data sits.
